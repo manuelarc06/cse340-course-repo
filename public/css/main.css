@@ -1,31 +1,119 @@
-html,
-body {
-    background-color: lightblue;
-    font-family: Arial, sans-serif;
+* {
     margin: 0;
-    padding: 20px;
+    padding: 0;
+    box-sizing: border-box;
 }
 
+/* BODY */
 body {
-    nav {
-        ul {
-            list-style-type: none;
-           padding: 0;
-        }
+    font-family: Arial, Helvetica, sans-serif;
+    background-color: #f4f7fb;
+    color: #333;
+    line-height: 1.6;
+}
 
-        li {
-            display: inline;
-            margin-right: 15px;
-        }
+/* NAVBAR */
+nav {
+    background-color: #004080;
+    padding: 1rem 2rem;
+}
 
-        a {
-            text-decoration: none;
-            color: #333;
-            font-weight: bold;
+nav ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    list-style: none;
+}
 
-            &:hover {
-                color: #0066cc;
-            }
-        }
+nav a {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.3s ease;
+}
+
+nav a:hover {
+    color: #ffd700;
+}
+
+/* MAIN CONTENT */
+main {
+    max-width: 1000px;
+    margin: 40px auto;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* HEADINGS */
+h1 {
+    color: #004080;
+    margin-bottom: 20px;
+}
+
+h2 {
+    margin-bottom: 15px;
+    color: #0066cc;
+}
+
+/* PARAGRAPHS */
+p {
+    margin-bottom: 20px;
+}
+
+/* LISTS */
+ul {
+    padding-left: 20px;
+}
+
+li {
+    margin-bottom: 10px;
+}
+
+/* IMAGES */
+img {
+    max-width: 100%;
+    height: auto;
+    margin-top: 20px;
+}
+
+.main-logo {
+    display: block;
+    margin: 30px auto;
+    max-width: 300px;
+}
+
+/* ORGANIZATION LOGOS */
+li img {
+    width: 50px;
+    vertical-align: middle;
+    margin-right: 10px;
+}
+
+/* FOOTER */
+footer {
+    text-align: center;
+    padding: 20px;
+    background-color: #004080;
+    color: white;
+    margin-top: 40px;
+}
+
+/* RESPONSIVE DESIGN */
+@media (max-width: 768px) {
+
+    nav ul {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    main {
+        margin: 20px;
+        padding: 15px;
+    }
+
+    h1 {
+        font-size: 1.8rem;
     }
 }
