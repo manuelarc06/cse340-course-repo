@@ -1,9 +1,61 @@
-import pool from "./db.js";
+import db from "./db.js";
 
 export async function getAllCategories() {
-    const result = await pool.query(
+
+    const result = await db.query(
         "SELECT * FROM categories ORDER BY name"
     );
+
+    return result.rows;
+}
+
+export async function getCategoryById(id) {
+
+    const sql = `
+        SELECT
+            category_id,
+            name
+        FROM categories
+        WHERE category_id = $1;
+    `;
+
+    const result = await db.query(sql, [id]);
+
+    return result.rows[0];
+}
+
+export async function getCategoriesByProjectId(projectId) {
+
+    const sql = `
+        SELECT
+            c.category_id,
+            c.name
+        FROM categories c
+        JOIN project_categories pc
+            ON c.category_id = pc.category_id
+        WHERE pc.project_id = $1
+        ORDER BY c.name;
+    `;
+
+    const result = await db.query(sql, [projectId]);
+
+    return result.rows;
+}
+
+export async function getProjectsByCategoryId(categoryId) {
+
+    const sql = `
+        SELECT
+            sp.project_id,
+            sp.title
+        FROM service_projects sp
+        JOIN project_categories pc
+            ON sp.project_id = pc.project_id
+        WHERE pc.category_id = $1
+        ORDER BY sp.title;
+    `;
+
+    const result = await db.query(sql, [categoryId]);
 
     return result.rows;
 }

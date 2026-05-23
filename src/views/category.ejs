@@ -3,17 +3,19 @@
     <main>
 
         <h1>
-            <%= title %>
+            <%= category.name %>
         </h1>
 
-        <ul class="categories-list">
+        <h2>Service Projects</h2>
 
-            <% categories.forEach(category=> { %>
+        <ul>
+
+            <% projects.forEach(project=> { %>
 
                 <li>
 
-                    <a href="/category/<%= category.category_id %>">
-                        <%= category.name %>
+                    <a href="/project/<%= project.project_id %>">
+                        <%= project.title %>
                     </a>
 
                 </li>
