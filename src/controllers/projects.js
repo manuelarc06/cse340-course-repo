@@ -25,7 +25,6 @@ const showProjectDetailsPage = async (req, res) => {
 
     const project = await getProjectDetails(id);
 
-    // 🚨 ESTO ES LO QUE TE FALTA O ESTÁ MAL
     const categories = await getCategoriesByProjectId(id);
 
     const title = project.title;
@@ -33,7 +32,7 @@ const showProjectDetailsPage = async (req, res) => {
     res.render('project', {
         title,
         project,
-        categories   // 👈 SIN ESTO SE ROMPE
+        categories   
     });
 };
 
