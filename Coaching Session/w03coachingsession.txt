@@ -1,0 +1,191 @@
+AI 
+I am your supportive and non-judgmental **Learning Coach and Software Mentor**.
+Welcome! Just to be clear from the start, this is a coaching session, not a test. It is perfectly okay—and even encouraged—to say "I don't know" or "I made a mistake." That's the fastest way we'll learn today.
+This is a safe learning space where we’ll go step by step through your work, and you’ll stay in control of what you share and when.
+What name should I use for you in this session?
+
+Me
+Manuela
+
+AI
+Great, thanks, Manuela.
+We’ll treat this as a safe learning space where the goal is to understand your decisions and improve your confidence with the code—mistakes and uncertainty are completely fine and expected in this process.
+To start with Topic 1 (Models), I’d like to look at your actual implementation.
+What I need from you first is your **model function that accepts a parameter and uses it inside an SQL query**—can you paste that snippet here?
+
+Me
+Here is a model function from my project. This function receives a category ID as a parameter and uses it in a parameterized SQL query to safely retrieve a single category from the database.
+export async function getCategoryById(id) {
+    const sql = `
+        SELECT
+            category_id,
+            name
+        FROM categories
+        WHERE category_id = $1;
+    `;
+
+    const result = await db.query(sql, [id]);
+
+    return result.rows[0];
+}
+
+AI
+Nice, this is a clear example of a parameterized query in a model function.
+You’re using `$1` with `[id]`, which is exactly the pattern used to prevent SQL injection and keep the query safe.
+Looking at your function, I want to understand your reasoning a bit more:
+Why did you choose to return only `result.rows[0]` instead of returning the full `result.rows` array?
+
+Me
+I return result.rows[0] because I expect the query to return only one category for a given ID. Since category_id is unique, there will only be one matching row, so returning the first element makes it easier to work with in the rest of the application.
+
+AI
+That makes sense and your reasoning is solid—because `category_id` is unique, the result set should contain at most one row, so returning `rows[0]` simplifies downstream usage.
+Let’s move into **Topic 2: Views (EJS)**.
+Please paste a **non-trivial EJS snippet from one of your views where you insert data into a link (an `<a>` tag)**—for example, something like a category detail link, product link, or similar dynamic route.
+
+Me
+Here is an EJS view from my project where I display a category page and dynamically generate links for related service projects.
+<%- include('partials/header') %>
+
+<main>
+
+    <h1>
+        <%= category.name %>
+    </h1>
+
+    <h2>Service Projects</h2>
+
+    <ul>
+
+        <% projects.forEach(project=> { %>
+
+            <li>
+
+                <a href="/project/<%= project.project_id %>">
+                    <%= project.title %>
+                </a>
+
+            </li>
+
+        <% }) %>
+
+    </ul>
+
+</main>
+
+<%- include('partials/footer') %>
+
+AI
+Good, this is a clean and typical EJS pattern for dynamic routing.
+You’re using the `project.project_id` inside the `<a href>` to build a route like `/project/:id`, which connects directly to your controller layer later on.
+To understand your thinking a bit more:
+Why did you choose to pass only `project.project_id` in the URL instead of passing something like a slug (e.g., `project.title` or a separate SEO-friendly identifier)?
+
+Me
+I chose to use project.project_id because it is a unique and stable identifier that directly matches the database primary key. It is also simpler and more reliable for routing, since titles can change and may contain spaces or special characters, which are not ideal for URLs.
+
+AI
+That’s a strong justification—using a primary key avoids ambiguity and prevents broken links when titles change. You’re also correctly thinking about URL safety and stability, which is exactly what we want in view-layer design.
+Let’s move to **Topic 3: Controllers**.
+Please paste a **controller route handler that includes a route parameter** (for example something like `/:id`), and briefly walk me through what it does.
+
+Me
+This is a controller in my MVC structure that connects the route parameter with the model layer and sends the retrieved data to the view.
+import {
+    getAllCategories,
+    getCategoryById,
+    getProjectsByCategoryId
+} from '../models/categories.js';
+
+const showCategoriesPage = async (req, res) => {
+
+    const categories = await getAllCategories();
+
+    const title = 'Service Categories';
+
+    res.render('categories', {
+        title,
+        categories
+    });
+};
+
+const showCategoryDetailsPage = async (req, res) => {
+
+    const id = req.params.id;
+
+    const category = await getCategoryById(id);
+
+    const projects = await getProjectsByCategoryId(id);
+
+    const title = category.name;
+
+    res.render('category', {
+        title,
+        category,
+        projects
+    });
+};
+
+export {
+    showCategoriesPage,
+    showCategoryDetailsPage
+};
+
+AI
+This is a good MVC example—your controller is clearly acting as the bridge between route params, models, and views.
+I can see you correctly extract `req.params.id`, pass it into multiple model functions, and then bundle the results into the view.
+Now I want to focus on your understanding of flow control and potential failure points:
+What would happen in your application right now if `getCategoryById(id)` returns `undefined` or `null` (for example, if someone manually enters a non-existent category ID in the URL)?
+
+Me
+If getCategoryById(id) returns null or undefined, the application would currently throw an error when trying to access category.name, because it would be reading a property of an undefined value. This would result in a server error and the request would fail instead of showing a user-friendly message.
+
+AI
+Correct—that’s the key failure point, and you’ve identified it precisely: `category.name` would crash the request if `category` is `null` or `undefined`.
+Let’s move into **Topic 4: Error handling**.
+Can you paste the part of your project where you handle errors globally (for example a **404 handler, 500 handler, or Express error middleware**) and briefly explain how a missing route or server error is currently handled?
+
+Me
+I handle errors globally in the main server file using Express middleware. I include both a 404 handler for missing routes and a global error handler for server-side errors, which renders custom error pages depending on the status code.
+app.use((req, res, next) => {
+    const err = new Error('Page Not Found');
+    err.status = 404;
+    next(err);
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+    console.error('Error occurred:', err.message);
+    console.error('Stack trace:', err.stack);
+
+    const status = err.status || 500;
+    const template = status === 404 ? '404' : '500';
+
+    const context = {
+        title: status === 404 ? 'Page Not Found' : 'Server Error',
+        error: err.message,
+        stack: err.stack
+    };
+
+    res.status(status).render(`errors/${template}`, context);
+});
+
+AI
+This is a solid implementation of Express error handling—you’ve got both pieces in place: a 404 “catch-all” middleware and a centralized error handler, which is exactly how MVC apps are typically structured.
+A few things are working well here:
+* Your 404 middleware correctly forwards an error when no route matches.
+* Your global handler cleanly separates status codes and selects the correct template (`404` vs `500`).
+* You’re logging both the message and stack trace, which is useful for debugging during development.
+One important thing to think about though: right now you’re passing `err.stack` directly into the rendered view.
+What is your reasoning for exposing the full stack trace in the error page instead of only logging it on the server side?
+
+Me
+I include the stack trace mainly to help with debugging during development, so I can quickly identify where an error is coming from. However, I understand that in a production environment it should not be exposed to users because it can reveal internal implementation details. Ideally, I would conditionally show the stack trace only in development mode and hide it in production while still logging it on the server.
+
+AI
+Exactly—that’s the right distinction. The stack trace is very useful for development, but in production it becomes information leakage, so your idea of environment-based rendering (development vs production) is the standard approach.
+At this point, we’ve covered all four required areas:
+Models
+Views
+Controllers
+Error handling
