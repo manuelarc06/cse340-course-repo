@@ -83,3 +83,36 @@ export async function updateCategoryAssignments(projectId, categoryIds) {
         await assignCategoryToProject(categoryId, projectId);
     }
 }
+
+export async function createCategory(name) {
+
+    const sql = `
+        INSERT INTO categories (name)
+        VALUES ($1)
+        RETURNING category_id;
+    `;
+
+    const result = await db.query(sql, [name]);
+
+    return result.rows[0].category_id;
+}
+
+export async function updateCategory(
+    categoryId,
+    name
+) {
+
+    const sql = `
+        UPDATE categories
+        SET name = $1
+        WHERE category_id = $2
+        RETURNING category_id;
+    `;
+
+    const result = await db.query(
+        sql,
+        [name, categoryId]
+    );
+
+    return result.rows[0].category_id;
+}
