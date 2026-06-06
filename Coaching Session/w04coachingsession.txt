@@ -1,0 +1,234 @@
+AI
+Welcome! Just to be clear from the start, this is a coaching session, not a test. It is perfectly okay—and even encouraged—to say "I don't know" or "I made a mistake." That's the fastest way we'll learn today.
+I’m acting as your supportive and non-judgmental Learning Coach and Software Mentor. This is a safe learning space where we’ll focus on understanding your decisions and filling in any gaps together, not evaluating or grading you.
+To get started, I want to make sure I’m addressing you correctly throughout the session.
+What name should I use for you during this session?
+
+Me
+Manuela
+
+AI
+Great, Manuela — thanks.
+We’re going to go step by step, and you’ll lead most of it. I’ll just guide and ask one question at a time.
+Before we dive into code, I want to confirm: you’re safe to share snippets here, and mistakes are expected and useful in this session.
+Now let’s start with **Topic 1: Handling Form Submissions**.
+Here’s a typical (non-trivial) Express route that handles form submission:
+
+```js
+// routes/products.js
+
+router.post("/products", async (req, res) => {
+  try {
+    const { name, price, description } = req.body;
+
+    if (!name || !price) {
+      req.flash("error", "Name and price are required");
+      return res.redirect("/products/new");
+    }
+
+    const newProduct = await Product.create({
+      name,
+      price,
+      description,
+    });
+
+    req.flash("success", "Product created successfully");
+    res.redirect(`/products/${newProduct._id}`);
+  } catch (err) {
+    console.error(err);
+    req.flash("error", "Something went wrong");
+    res.redirect("/products/new");
+  }
+});
+```
+
+This touches request body parsing, validation, database creation, and flash messaging.
+**My question (just one):**
+In your own project, how are you currently extracting and using form data from `req.body`, and what part of that process do you find most confusing or error-prone?
+
+Me
+In my project, I handle form submissions by accessing the data from req.body inside my controller functions. For example, when creating a new category, I extract the form value like this:
+
+const { name } = req.body;
+
+Then I use this value to call a model function that saves the new category in the database. What I sometimes find confusing is making sure that the form data is properly received from the request, especially when debugging why a value might be undefined.
+
+AI
+That’s a very common sticking point, especially when things silently become `undefined`.
+What you described usually comes down to a mismatch between what the form sends and what Express is actually able to parse. In practice, the issue is often one of these: the input `name` attribute doesn’t match the key you expect, `express.urlencoded()` isn’t enabled, or the form is sending a different content type (like `multipart/form-data`).
+A useful mental check is: *“Do I know exactly what keys are being sent from the browser?”* — because `req.body` is just a reflection of that parsed payload.
+**One question for you:**
+When you debug `undefined` values in `req.body`, what specific steps do you take to verify what the browser is actually sending in the form request?
+
+Me
+When I get undefined values in req.body, the first thing I do is check the form input fields in the EJS template and make sure the name attribute matches what I am trying to access in the controller. Then I check the route to confirm it is using a POST method and that express.urlencoded({ extended: true }) is enabled in my server setup. This helps me verify whether the issue is in the frontend form or in how Express is parsing the request.
+
+AI
+Good debugging flow — you’re already checking the two most common failure points (form `name` mismatch and middleware parsing), which is exactly where most `req.body` issues come from.
+One extra thing that often helps in real projects is adding a quick “truth check” at the boundary:
+
+```js
+console.log("BODY RECEIVED:", req.body);
+```
+
+or even:
+
+```js
+console.log("RAW HEADERS:", req.headers["content-type"]);
+```
+
+That immediately tells you whether the issue is “nothing is being sent” vs “Express can’t parse it.”
+
+---
+
+### Topic 2: Forms for Updates (EJS + pre-filled forms)
+Now let’s move to update forms, where things usually get a bit trickier.
+Here’s a typical EJS edit form:
+
+```ejs
+<!-- views/categories/edit.ejs -->
+
+<form action="/categories/<%= category._id %>?_method=PUT" method="POST">
+  <label for="name">Category Name</label>
+  <input
+    type="text"
+    id="name"
+    name="name"
+    value="<%= category.name %>"
+  />
+
+  <button type="submit">Update Category</button>
+</form>
+```
+
+This introduces:
+
+* pre-filling values from the database
+* using `_method=PUT` for RESTful routing
+* ensuring the correct entity is being edited
+
+**One question for you:**
+When you build update forms like this, what do you find more challenging — correctly pre-filling the form with existing data, or making sure the update request targets the correct record?
+
+Me
+In my case, I find it more challenging to make sure the correct record is being updated rather than filling in the form with existing data. Showing existing data in the form is usually straightforward because I already fetch the category from the database using its id and pass it to the EJS view, so I can display the current values easily. The more difficult part is making sure the correct category_id is sent back in the request and that the route updates the right record in the database. I need to carefully check that the route parameter matches the id used in the update query.
+
+AI
+That’s a very real pain point in CRUD apps, and it usually shows up when the “plumbing” between route → form → controller isn’t fully aligned.
+A useful way to think about it is: there are **three identity sources** that must stay consistent:
+* the URL (`/categories/:id`)
+* the form action (`action="/categories/<%= category._id %>..."`)
+* the update query (`findByIdAndUpdate(req.params.id, ...)` or similar)
+If any one of those drifts, you get either no update or worse — updating the wrong record.
+A simple pattern that helps reduce mistakes is to treat the route param as the *single source of truth*, and avoid relying on hidden inputs unless absolutely necessary.
+Example update handler:
+
+```js id="updcat1"
+router.put("/categories/:id", async (req, res) => {
+  const { id } = req.params;
+  const { name } = req.body;
+
+  await Category.findByIdAndUpdate(id, { name });
+
+  req.flash("success", "Category updated");
+  res.redirect("/categories");
+});
+```
+
+And then ensuring your form **only needs to hit the correct URL**, not carry identity in multiple places.
+
+---
+
+### Topic 3: Sessions and Flash Messages
+Now let’s shift to sessions and flash messages, since you’ve already been using `req.flash()`.
+Here’s a typical setup:
+
+```js id="sess1"
+import session from "express-session";
+import flash from "connect-flash";
+
+app.use(
+  session({
+    secret: "mySecretKey",
+    resave: false,
+    saveUninitialized: false,
+  })
+);
+
+app.use(flash());
+
+app.use((req, res, next) => {
+  res.locals.success = req.flash("success");
+  res.locals.error = req.flash("error");
+  next();
+});
+```
+
+And usage:
+
+```js id="sess2"
+req.flash("success", "Category updated successfully");
+return res.redirect("/categories");
+```
+
+This pattern is used to pass temporary messages across redirects.
+**One question for you:**
+In your own understanding, what problem are sessions solving in your app that you *couldn’t easily solve* with just `res.render()` or query parameters?
+
+Me
+In my app, I use flash messages to show feedback to the user after a redirect, for example after creating or updating a category. This is something that I could not easily do with res.render() because redirects create a new request, so any data passed directly in the response would be lost. Compared to query parameters, sessions are also more secure and cleaner because the messages are stored server-side and are not exposed in the URL.
+
+AI
+That’s a solid understanding. You’ve correctly identified the key constraint: **HTTP redirects create a brand-new request**, so anything only attached to the previous response is gone unless you persist it somewhere.
+And you also picked up an important tradeoff: sessions keep things server-side, which avoids URL pollution and reduces exposure of user-facing state.
+One small refinement to deepen your mental model:
+Flash messages are specifically a *“one-request persistence mechanism built on top of session storage”*. So they’re not just “session data” — they’re designed to be automatically cleared after being read once, which is why they’re perfect for redirect flows.
+
+---
+
+### Topic 4: Server-side Validation
+Now let’s move to validation, which connects directly to your earlier `req.body` debugging experience.
+Here’s a typical server-side validation example:
+
+```js id="val1"
+router.post("/categories", async (req, res) => {
+  const { name } = req.body;
+
+  const errors = [];
+
+  if (!name || name.trim() === "") {
+    errors.push("Category name is required");
+  }
+
+  if (name && name.length > 50) {
+    errors.push("Category name must be under 50 characters");
+  }
+
+  if (errors.length > 0) {
+    req.flash("error", errors.join(", "));
+    return res.redirect("/categories/new");
+  }
+
+  await Category.create({ name: name.trim() });
+
+  req.flash("success", "Category created successfully");
+  res.redirect("/categories");
+});
+```
+
+This is basic but important:
+
+* validation happens on the server (not just frontend)
+* errors are collected, not thrown immediately
+* user is redirected with feedback
+
+**One question for you:**
+In your current project, how do you decide what *must* be validated on the server side versus what you rely on the frontend (HTML or client-side validation) to enforce?
+
+Me
+In my project, I always treat server-side validation as the main layer of validation, and I do not fully rely on frontend validation. On the frontend, I use basic HTML validation like required and maxlength to help users avoid simple mistakes and improve the user experience. However, on the server side I use express-validator to enforce the real rules, such as checking that the category name is not empty and that it has a valid length. This is important because users can bypass frontend validation.
+
+AI
+Great work — we’ve now completed the coaching session.
+
+We covered all four required topics: form submissions, update forms, sessions and flash messages, and server-side validation. You were able to explain your approach clearly and connect it to your own project, which shows a solid understanding of how these concepts work together in a real application.
