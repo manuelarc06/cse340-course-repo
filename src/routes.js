@@ -19,7 +19,9 @@ import {
     processNewProjectForm,
     showEditProjectForm,
     processEditProjectForm,
-    projectValidation
+    projectValidation,
+    volunteerForProject,
+    unVolunteerForProject
 } from './controllers/projects.js';
 
 import {
@@ -71,6 +73,10 @@ router.post('/edit-organization/:id', requireRole('admin'), organizationValidati
 router.get('/projects', showProjectsPage);
 
 router.get('/project/:id', showProjectDetailsPage);
+
+router.get('/project/:id/volunteer', requireLogin, volunteerForProject);
+
+router.get('/project/:id/unvolunteer', requireLogin, unVolunteerForProject);
 
 // Show new project form
 router.get('/new-project', requireRole('admin'), showNewProjectForm);

@@ -28,6 +28,35 @@
                 <%= project.organization_name %>
             </a>
         </p>
+
+        <% if (user) { %>
+        
+            <% if (!volunteer) { %>
+        
+                <p>
+                    <a href="/project/<%= project.project_id %>/volunteer">
+                        Volunteer for this Project
+                    </a>
+                </p>
+        
+                <% } else { %>
+        
+                    <p>
+                        <strong>
+                            You are volunteering for this project.
+                        </strong>
+                    </p>
+        
+                    <p>
+                        <a href="/project/<%= project.project_id %>/unvolunteer">
+                            Remove Volunteer Registration
+                        </a>
+                    </p>
+        
+                    <% } %>
+        
+                        <% } %>
+
         <% if (user && user.role_name==='admin' ) { %>
             <p>
                 <a href="/assign-categories/<%= project.project_id %>">

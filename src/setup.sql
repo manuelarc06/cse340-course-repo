@@ -135,3 +135,23 @@ JOIN roles r ON u.role_id = r.role_id;
 -- Delete Test User
 -- ========================================
 DELETE FROM users WHERE email = 'test@example.com';
+
+-- ========================================
+-- Project Volunteers (Many-to-Many)
+-- ========================================
+CREATE TABLE project_volunteers (
+    project_id INT NOT NULL,
+    user_id INT NOT NULL,
+
+    PRIMARY KEY (project_id, user_id),
+
+    CONSTRAINT fk_volunteer_project
+        FOREIGN KEY (project_id)
+        REFERENCES service_projects(project_id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_volunteer_user
+        FOREIGN KEY (user_id)
+        REFERENCES users(user_id)
+        ON DELETE CASCADE
+);
